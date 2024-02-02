@@ -8,9 +8,9 @@ def git_ops_name = "frontend-gitops-kust"
 // 본인 Namespace
 def P_NAMESPACE = "default"
 // 본인 slave pvc
-def P_SLAVE_PVC = "jenkins-edu-slave-pvc"
+def P_SLAVE_PVC = "jenkins-edu5-slave-pvc"
 // 본인 이메일
-def P_EMAIL = "shclub@gmail.com"
+def P_EMAIL = "djadbwjd0403@gmail.com"
 
 
 def TAG = getTag(gitBranch)
@@ -29,13 +29,13 @@ podTemplate(label: label, serviceAccount: 'jenkins-admin', namespace: P_NAMESPAC
         
       stage('Clone Git Project') {
           script{
-             checkout scm
+             checkout master
           }
        } 
                      
       stage('Podman Build & Image Push ') {
               container('podman') {
-                  withCredentials([usernamePassword(credentialsId: 'github_ci',usernameVariable: 'USERNAME',passwordVariable: 'PASSWORD')]) {
+                  withCredentials([usernamePassword(credentialsId: 'gitops',usernameVariable: 'ujeongeom',passwordVariable: 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJlZHUiLCJleHAiOjE3MjM1NjE3NzYsImlhdCI6MTcwNTU2MTc3Nn0.6RYkTNOu-2lc5tPqaaalG_vL7VpSP9CxMAHRbf5wwVRCiNjDxA07UIVA3lH8rEoVkrFnF85Oi-u-FCxp1FnBoA')]) {
                      sh  """
                      podman login -u ${USERNAME} -p ${PASSWORD} ${docker_registry} --tls-verify=false
                      podman build -t ${imageName}:${TAG} --cgroup-manager=cgroupfs --tls-verify=false .
@@ -48,19 +48,19 @@ podTemplate(label: label, serviceAccount: 'jenkins-admin', namespace: P_NAMESPAC
 
         stage('GitOps update') {
             container('podman') {
-               withCredentials([usernamePassword(credentialsId: 'github_ci',usernameVariable: 'USERNAME',passwordVariable: 'PASSWORD')]) {
+               withCredentials([usernamePassword(credentialsId: 'gitops',usernameVariable: 'ujeongeom',passwordVariable: 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJlZHUiLCJleHAiOjE3MjM1NjE3NzYsImlhdCI6MTcwNTU2MTc3Nn0.6RYkTNOu-2lc5tPqaaalG_vL7VpSP9CxMAHRbf5wwVRCiNjDxA07UIVA3lH8rEoVkrFnF85Oi-u-FCxp1FnBoA')]) {
                     sh """  
                         cd ~
                         git clone https://${USERNAME}:${PASSWORD}@github.com/${USERNAME}/${git_ops_name}
                         cd ${git_ops_name}
-                        git checkout HEAD
+                        git checkout master
                         kustomize edit set image ${imageName}:${TAG}
                         git config --global user.email ${P_EMAIL}
                         git config --global user.name ${USERNAME}
                         git add .
                         git commit -am 'update image tag  ${TAG} from My_Jenkins'
                         cat kustomization.yaml
-                        git push origin HEAD
+                        git push origin master
                     """
                } 
             }
